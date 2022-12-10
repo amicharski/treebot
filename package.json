@@ -1,0 +1,14 @@
+{
+    "name": "treebot",
+    "version": "0.0.1",
+    "description": "A friendly Discord general-purpose bot with sophisticated administrator controls and server statistics",
+    "main": "bot.js",
+    "scripts": {
+        "start": "node bot.js"
+    },
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "discord.js": "^14.7.1",
+        "dotenv": "^16.0.3"
+    }
+}
