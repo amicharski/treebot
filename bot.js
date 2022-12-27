@@ -3,9 +3,24 @@ const { Client, Events, Collection, REST, Routes } = require('discord.js');
 const chalk = require('chalk');
 const fs = require('fs');
 const path = require('path');
+const Surreal = require('surrealdb.js').default;
 require('dotenv').config();
 
 const client = new Client({ intents: config.intents });
+const db = new Surreal('http://localhost:8000/');
+
+(async() => {
+    try {
+        await db.signin({
+            user: 'root',
+            pass: 'root'
+        });
+    
+        await db.use('political_debate', 'dev');
+    } catch(err){
+        console.error(err);
+    }
+})();
 
 client.once(Events.ClientReady, c => {
     console.log("Treebot is ready")
@@ -60,10 +75,21 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.on(Events.MessageCreate, async message => {
-    const triggerRegex = new RegExp(config.triggerWords.join('|'));
-    const cmdRegex = new RegExp('^\.(?:' + config.modCommands.join('|') + ')');
-    let messageContent = message.content.replace(triggerRegex, triggeredWord => chalk.red(triggeredWord));
-    messageContent = message.content.match(cmdRegex) ? chalk.blue(messageContent) : messageContent;
+    try {
+        const triggerRegex = new RegExp(config.triggerWords.join('|'));
+        const cmdRegex = new RegExp('^\.(?:' + config.modCommands.join('|') + ')');
+        let messageContent = message.content.replace(triggerRegex, triggeredWord => chalk.red(triggeredWord));
+        messageContent = message.content.match(cmdRegex) ? chalk.blue(messageContent) : messageContent;
 
-    console.log(`In ${client.channels.cache.get(message.channelId).name}, ${message.author.username}: ${messageContent}`);
+        await db.create('message', {
+            content: message.content,
+            channel: message.channelId,
+            author: message.author.username,
+            timestamp: message.timestamp,
+        }).then(() => {
+            console.log(`In ${client.channels.cache.get(message.channelId).name}, ${message.author.username}: ${messageContent}`);
+        });
+    } catch(err){
+        console.log(err);
+    }
 });
